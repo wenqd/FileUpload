@@ -7,7 +7,7 @@
             <div ref="detailView" style="float:left" class="tab-active" @click="tabChange('detailView')">分类展示
               {{ CNodeImgeCount }}
             </div>
-            <div ref="allView" style="float:left" @click="tabChange('allView')">全部展示{{ AllImgeCount }}</div>
+            <div v-if="uploadprops.config.shwoAlllist" ref="allView" style="float:left" @click="tabChange('allView')">全部展示{{ AllImgeCount }}</div>
             <div style="clear:both"/>
           </div>
           <div class="btns">
@@ -42,21 +42,6 @@ window.$ = $
 window.jQuery = $
 require('@/components/webuploader/webuploader-0.1.5/webuploader.js')
 
-window.webuploader = {
-  config: {
-    thumbWidth: 125, // 缩略图宽度，可省略，默认为110
-    thumbHeight: 125, // 缩略图高度，可省略，默认为110
-    wrapId: 'uploader' // 必填
-  },
-  // 处理客户端新文件上传时，需要调用后台处理的地址, 必填
-  uploadUrl: process.env.BASE_API + '/fileTransferUploadActionImg.do',
-  // 处理客户端原有文件更新时的后台处理地址，必填
-  updateUrl: process.env.BASE_API + '/fileTransferUploadActionImg.do',
-  // 当客户端原有文件删除时的后台处理地址，必填
-  removeUrl: process.env.BASE_API + '/commAction.do',
-  // 初始化客户端上传文件，从后台获取文件的地址, 可选，当此参数为空时，默认已上传的文件为空
-  initUrl: process.env.BASE_API + '/commAction.do'
-}
 $(function () {})
 export default {
   name: 'FileUpload',
@@ -69,6 +54,28 @@ export default {
       type: Array,
       default: function () {
         return []
+      }
+    },
+    uploadprops: {
+      type: Object,
+      default: function () {
+        return {
+          config: {
+            thumbWidth: 125, // 缩略图宽度，可省略，默认为110
+            thumbHeight: 125, // 缩略图高度，可省略，默认为110
+            wrapId: 'uploader', // 必填
+            shwoAlllist: false, // 是否显示全部图片标签页
+            fileformat: 'gif,jpg,jpeg,png,zip,pdf,xlsx,xls,doc,docx,ppt,rar'// 允许上传的文件格式
+          },
+          // 处理客户端新文件上传时，需要调用后台处理的地址, 必填
+          uploadUrl: '',
+          // 处理客户端原有文件更新时的后台处理地址，必填
+          updateUrl: '',
+          // 当客户端原有文件删除时的后台处理地址，必填
+          removeUrl: '',
+          // 初始化客户端上传文件，从后台获取文件的地址, 可选，当此参数为空时，默认已上传的文件为空
+          initUrl: ''
+        }
       }
     }
   },
@@ -103,29 +110,29 @@ export default {
     initWebUploader: function () {
       var _this = this
       /* eslint-disable */
-      if (!window.webuploader) {
-        console.log("请配置好window.webuploader");
-        $("#dndArea p").html("请配置好window.webuploader");
+      if (!this.uploadprops) {
+        console.log("请配置好_this.uploadprops");
+        $("#dndArea p").html("请配置好uploadprops");
         return false;
       }
-      if (!window.webuploader.config || !window.webuploader.config.wrapId) {
-        console.log("请配置好window.webuploader.config.wrapId");
-        $("#dndArea p").html("请配置好window.webuploader.config.wrapId");
+      if (!this.uploadprops.config || !this.uploadprops.config.wrapId) {
+        console.log("请配置好uploadprops.config.wrapId");
+        $("#dndArea p").html("请配置好uploadprops.config.wrapId");
         return false;
       }
-      if (!window.webuploader.uploadUrl) {
-        console.log("请配置好window.webuploader.uploadUrl");
-        $("#dndArea p").html("请配置好window.webuploader.uploadUrl");
+      if (!_this.uploadprops.uploadUrl) {
+        console.log("请配置好_this.uploadprops.uploadUrl");
+        $("#dndArea p").html("请配置好uploadprops.uploadUrl");
         return false;
       }
-      if (!window.webuploader.updateUrl) {
-        console.log("请配置好window.webuploader.updateUrl");
-        $("#dndArea p").html("请配置好window.webuploader.updateUrl");
+      if (!_this.uploadprops.updateUrl) {
+        console.log("请配置好_this.uploadprops.updateUrl");
+        $("#dndArea p").html("请配置好uploadprops.updateUrl");
         return false;
       }
-      if (!window.webuploader.removeUrl) {
-        console.log("请配置好window.webuploader.removeUrl");
-        $("#dndArea p").html("请配置好window.webuploader.removeUrl");
+      if (!_this.uploadprops.removeUrl) {
+        console.log("请配置好_this.uploadprops.removeUrl");
+        $("#dndArea p").html("请配置好uploadprops.removeUrl");
         return false;
       }
       var disX = 0;
@@ -133,7 +140,7 @@ export default {
       var minZindex = 1;
       var origin;
       var is_moveing = false;
-      var $wrap = $("#" + window.webuploader.config.wrapId);
+      var $wrap = $("#" + _this.uploadprops.config.wrapId);
       /* var $queue = $('<ul class="filelist"></ul>').appendTo(
         $wrap.find(".queueList")
       ); */
@@ -162,13 +169,13 @@ export default {
       // 优化retina, 在retina下这个值是2
       var ratio = window.devicePixelRatio || 1;
       // 缩略图大小
-      var thumbnailWidth = window.webuploader.config.thumbWidth || 110;
+      var thumbnailWidth = _this.uploadprops.config.thumbWidth || 110;
       thumbnailWidth *= ratio;
-      var thumbnailHeight = window.webuploader.config.thumbHeight || 110;
+      var thumbnailHeight = _this.uploadprops.config.thumbHeight || 110;
       thumbnailHeight *= ratio;
       var uploader = WebUploader.create({
-        swf: "./src/components/webuploader/webuploader-0.1.5/Uploader.swf", //require('@/components/webuploader/webuploader-0.1.5/Uploader.swf')
-        server: window.webuploader.uploadUrl,
+        swf: "http://cdn.staticfile.org/webuploader/0.1.0/Uploader.swf", //require('@/components/webuploader/webuploader-0.1.5/Uploader.swf')
+        server: _this.uploadprops.uploadUrl,
         pick: {
           id: "#filePicker",
           label: "点击选择图片"
@@ -177,7 +184,7 @@ export default {
         paste: document.body,
         accept: {
           title: "Images",
-          extensions: "gif,jpg,jpeg,png,zip,pdf,xlsx,xls,doc,docx,ppt,rar",
+          extensions: _this.uploadprops.config.fileformat,
           mimeTypes: "*"
         },
         resize: false,
@@ -187,29 +194,22 @@ export default {
       });
 
       function setDragEvent() {
-        $(this)
-          .on("drop", function(e) {
-            var $from = $(origin).parents("li");
-            var $to = $(e.target).parents("li");
-            var origin_pos = $from.position();
-            var target_pos = $to.position();
-            var from_sort = $from.attr("data-sort");
-            var to_sort = $to.attr("data-sort");
+        $(this).on("drop", function(e) {
+          var $from = $(origin).parents("li");
+          var $to = $(e.target).parents("li");
+          var origin_pos = $from.position();
+          var target_pos = $to.position();
+          var from_sort = $from.attr("data-sort");
+          var to_sort = $to.attr("data-sort");
 
-            $from
-              .addClass("move")
-              .animate(target_pos, "fast", function() {
-                $(this).removeClass("move");
-              })
-              .attr("data-sort", to_sort);
+          $from.addClass("move").animate(target_pos, "fast", function() {
+            $(this).removeClass("move");
+          }).attr("data-sort", to_sort);
 
-            $to
-              .addClass("move")
-              .animate(origin_pos, "fast", function() {
-                $(this).removeClass("move");
-              })
-              .attr("data-sort", from_sort);
-          })
+          $to.addClass("move").animate(origin_pos, "fast", function() {
+            $(this).removeClass("move");
+          }).attr("data-sort", from_sort);
+        })
           .on("dragstart", function(e) {
             if (is_moveing) {
               return false;
@@ -233,7 +233,7 @@ export default {
         });
         $.ajax({
           type: "post",
-          url: window.webuploader.updateUrl,
+          url: _this.uploadprops.updateUrl,
           data: postData,
           dataType: "json",
           success: function(data) {
@@ -279,7 +279,7 @@ export default {
         })
         /* $.ajax({
           type: "get",
-          url: window.webuploader.removeUrl,
+          url: _this.uploadprops.removeUrl,
           data: { id: file.name },
           dataType: "json",
           success: function(data) {
@@ -291,7 +291,7 @@ export default {
 
       //初始化服务端附件
       function initServerFile() {
-        if (window.webuploader.initUrl) {
+        if (_this.uploadprops.initUrl) {
           $.each(_this.initfiles,function(k,fl){
             $.each(fl.F_ATTACHS,function(index,file){
               file.F_FILE_TP = file.F_FILE_TP.toLowerCase()
@@ -868,9 +868,9 @@ export default {
       // 优化retina, 在retina下这个值是2
       var ratio = window.devicePixelRatio || 1
       // 缩略图大小
-      var thumbnailWidth = window.webuploader.config.thumbWidth || 110
+      var thumbnailWidth = this.uploadprops.config.thumbWidth || 110
       thumbnailWidth *= ratio
-      var thumbnailHeight = window.webuploader.config.thumbHeight || 110
+      var thumbnailHeight = this.uploadprops.config.thumbHeight || 110
       thumbnailHeight = thumbnailHeight + 25
       thumbnailHeight *= ratio
       var wrapHeight = thumbnailHeight + 10
