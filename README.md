@@ -1,6 +1,6 @@
 # fileupload
 
-> A Vue.js project
+## 基于Vue 二次封装百度开源上传插件FileUpload ，已发布到npm
 
 ## Build Setup
 
